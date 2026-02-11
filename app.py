@@ -79,6 +79,10 @@ if not df.empty:
     all_types = sorted(df['ObjectType'].unique().astype(str).tolist())
     selected_types = st.sidebar.multiselect("Select Object Types", options=all_types, default=[])
 
+    # Display Name Filter
+    all_names = sorted(df['DisplayName'].dropna().unique().astype(str).tolist())
+    selected_names = st.sidebar.multiselect("Select Display Names", options=all_names, default=[])
+
     # Apply Filters
     filtered_df = df.copy()
     if selected_resources:
@@ -87,6 +91,8 @@ if not df.empty:
         filtered_df = filtered_df[filtered_df['RoleDefinitionName'].isin(selected_roles)]
     if selected_types:
         filtered_df = filtered_df[filtered_df['ObjectType'].astype(str).isin(selected_types)]
+    if selected_names:
+        filtered_df = filtered_df[filtered_df['DisplayName'].astype(str).isin(selected_names)]
 
     # Metrics Row
     col1, col2, col3, col4 = st.columns(4)
