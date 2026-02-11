@@ -7,6 +7,7 @@ const main = ({
         .toLowerCase()
         .replace(/\./g, '-')
     const port = string('PORT', '8501')
+    const hosts = [string('APP_DOMAIN')]
 
     const config = {
         applications: [{
@@ -16,6 +17,7 @@ const main = ({
             healthcheck: {
                 path: '/healthz',
             },
+            hosts,
             server: {
                 port,
             },

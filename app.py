@@ -14,8 +14,8 @@ This dashboard provides a comprehensive analysis of Azure Role Assignments.
 **Upload your latest report** or explore the default data using the sidebar filters.
 """)
 
-# Default CSV Path
-DEFAULT_CSV_PATH = "./data/role-assignments-2025-07-14.csv"
+# Default CSV path can be set via environment variable
+DEFAULT_CSV_PATH = os.getenv("CSV_REPORT_PATH")
 
 def extract_resource_name(scope):
     if not isinstance(scope, str) or not scope:
@@ -53,11 +53,15 @@ if uploaded_file is not None:
     df = process_data(uploaded_file)
     st.sidebar.success("Loaded uploaded file!")
 else:
-    df = process_data(DEFAULT_CSV_PATH)
-    if not df.empty:
-        st.sidebar.info("Using default report data.")
+    if DEFAULT_CSV_PATH:
+        df = process_data(DEFAULT_CSV_PATH)
+        if not df.empty:
+            st.sidebar.info("Using default report data.")
+        else:
+            st.sidebar.warning(f"Default data not found at {DEFAULT_CSV_PATH}. Please upload a CSV report.")
     else:
-        st.sidebar.warning("Default data not found. Please upload a CSV report.")
+        df = pd.DataFrame()
+        st.sidebar.info("Please upload a CSV report to begin.")
 
 if not df.empty:
     # Sidebar Filters
