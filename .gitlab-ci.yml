@@ -1,0 +1,5 @@
+include:
+  - project: 'example/ci-templates'
+    ref: $CI_TEMPLATE_VERSION
+    file:
+      - '/pipelines/workflow.yml'
