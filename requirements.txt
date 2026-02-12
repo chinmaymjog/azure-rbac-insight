@@ -3,3 +3,7 @@ pandas
 plotly
 matplotlib
 numpy
+azure-identity
+azure-mgmt-subscription
+azure-mgmt-authorization
+azure-mgmt-resource

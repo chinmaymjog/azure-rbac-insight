@@ -3,6 +3,9 @@ import pandas as pd
 import plotly.express as px
 import os
 import io
+from azure.identity import DefaultAzureCredential
+from azure.mgmt.subscription import SubscriptionClient
+from azure.mgmt.authorization import AuthorizationManagementClient
 
 # Set page config
 st.set_page_config(page_title="AzRBAC-Insight", layout="wide")
@@ -14,8 +17,49 @@ This dashboard provides a comprehensive analysis of Azure Role Assignments.
 **Upload your latest report** or explore the default data using the sidebar filters.
 """)
 
-# Default CSV path can be set via environment variable
-DEFAULT_CSV_PATH = os.getenv("CSV_REPORT_PATH")
+# Azure SDK Integration
+@st.cache_resource
+def get_credentials():
+    return DefaultAzureCredential()
+
+@st.cache_data
+def get_subscriptions():
+    try:
+        cred = get_credentials()
+        sub_client = SubscriptionClient(cred)
+        subs = list(sub_client.subscriptions.list())
+        return {sub.display_name: sub.subscription_id for sub in subs}
+    except Exception as e:
+        st.error(f"Error fetching subscriptions: {e}")
+        return {}
+
+@st.cache_data
+def get_role_assignments(subscription_id):
+    try:
+        cred = get_credentials()
+        auth_client = AuthorizationManagementClient(cred, subscription_id)
+        assignments = list(auth_client.role_assignments.list_for_subscription())
+        
+        data = []
+        for ra in assignments:
+            # Note: The SDK returns objects, we need to extract attributes
+            # Some attributes might need additional lookup (like DisplayName from ObjectId)
+            # but for now we follow the structure the user expects or what we can get.
+            data.append({
+                'DisplayName': ra.principal_id, # Placeholder if name not directly available
+                'ObjectId': ra.principal_id,
+                'RoleDefinitionName': ra.role_definition_id.split('/')[-1], # Placeholder
+                'ObjectType': ra.principal_type,
+                'Scope': ra.scope,
+            })
+        
+        df = pd.DataFrame(data)
+        if not df.empty:
+            df['Resource Name'] = df['Scope'].apply(extract_resource_name)
+        return df
+    except Exception as e:
+        st.error(f"Error fetching role assignments: {e}")
+        return pd.DataFrame()
 
 def extract_resource_name(scope):
     if not isinstance(scope, str) or not scope:
@@ -43,25 +87,27 @@ def process_data(data):
     
     return df
 
-# Sidebar for Configuration and Filters
-st.sidebar.header("📁 Data Source")
+# Sidebar for Configuration and Azure Fetching
+st.sidebar.header("🔌 Azure Connection")
 
-# File Uploader
-uploaded_file = st.sidebar.file_uploader("Upload Azure RBAC CSV", type=["csv"])
-
-if uploaded_file is not None:
-    df = process_data(uploaded_file)
-    st.sidebar.success("Loaded uploaded file!")
+subscriptions = get_subscriptions()
+if subscriptions:
+    selected_sub_name = st.sidebar.selectbox("Select Subscription", options=list(subscriptions.keys()))
+    selected_sub_id = subscriptions[selected_sub_name]
+    
+    if st.sidebar.button("Fetch Role Assignments"):
+        with st.spinner(f"Fetching data for {selected_sub_name}..."):
+            df = get_role_assignments(selected_sub_id)
+            if not df.empty:
+                st.session_state['df'] = df
+                st.sidebar.success(f"Fetched {len(df)} assignments!")
+            else:
+                st.sidebar.warning("No data found or error occurred.")
 else:
-    if DEFAULT_CSV_PATH:
-        df = process_data(DEFAULT_CSV_PATH)
-        if not df.empty:
-            st.sidebar.info("Using default report data.")
-        else:
-            st.sidebar.warning(f"Default data not found at {DEFAULT_CSV_PATH}. Please upload a CSV report.")
-    else:
-        df = pd.DataFrame()
-        st.sidebar.info("Please upload a CSV report to begin.")
+    st.sidebar.warning("No subscriptions found. Please ensure you are logged in (e.g., via 'az login').")
+
+# Load data from session state
+df = st.session_state.get('df', pd.DataFrame())
 
 if not df.empty:
     # Sidebar Filters
@@ -132,10 +178,11 @@ if not df.empty:
     # Data Table
     st.subheader("📋 Detailed Assignment Data")
     # Show Resource Name instead of Scope in the default view
-    st.dataframe(filtered_df[['DisplayName', 'SignInName', 'RoleDefinitionName', 'ObjectType', 'Resource Name']], use_container_width=True)
+    st.dataframe(filtered_df[['DisplayName', 'RoleDefinitionName', 'ObjectType', 'Resource Name']], use_container_width=True)
+
 
 else:
-    st.info("👋 Welcome! Please upload an Azure Role Assignments CSV file to get started.")
+    st.info("👋 Welcome! Select a subscription and click 'Fetch Role Assignments' to begin.")
 
 # Footer
 st.markdown("---")
