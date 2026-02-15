@@ -22,7 +22,11 @@ AzRBAC-Insight/
 ├── data/               # Local directory for temporary storage of CSV reports
 ├── k8s/                # Kubernetes manifests for AKS deployment
 │   └── manifests.yaml  # Deployment and Service definitions
-└── .gitlab-ci.yml      # CI/CD pipeline for automated builds and infrastructure
+├── .gitignore          # Repository hygiene (ignores .venv, data/, etc.)
+├── data/               # Local directory for temporary storage of CSV reports
+├── k8s/                # Kubernetes manifests for deployment
+│   └── manifests.yaml  # Deployment and Service definitions
+└── .github/            # GitHub Actions for CI/CD
 ```
 
 ### High-Level Architecture
@@ -45,7 +49,7 @@ To run and test the dashboard on your local machine, follow these steps:
 ### Step-by-Step Setup
 1.  **Clone the Repository**:
     ```bash
-    git clone <repository-url>
+    git clone https://github.com/chinmaymjog/AzRBAC-Insight.git
     cd AzRBAC-Insight
     ```
 
@@ -86,14 +90,6 @@ Using AzRBAC-Insight is straightforward and requires no coding knowledge.
     - Drag and drop your exported CSV file.
     - The dashboard will automatically update with your data.
 
-### Navigating the Insights
-- **Summary Metrics**: View high-level stats like total assignments and unique principals at the top.
-- **Filtering**: Use the sidebar to drill down into specific **Roles**, **Resource Names**, or **Object Types** (e.g., filter only for 'ServicePrincipals').
-- **Visual Analysis**:
-    - **Top Roles**: Identify which roles are most common in your environment.
-    - **Object Type Pie Chart**: See the balance between human users and automated identities.
-- **Detailed Audit**: Scroll to the bottom to see a searchable table of all filtered assignments for granular verification.
-
 ---
 
 ## Technologies Used
@@ -101,4 +97,4 @@ Using AzRBAC-Insight is straightforward and requires no coding knowledge.
 - **Frontend/Dashboard**: [Streamlit](https://streamlit.io/)
 - **Data Processing**: [Pandas](https://pandas.pydata.org/)
 - **Charts**: [Plotly Express](https://plotly.com/python/plotly-express/)
-- **Infrastructure**: Docker, Kubernetes (AKS), GitLab CI/CD
+- **Infrastructure**: Docker, Kubernetes, GitHub Actions

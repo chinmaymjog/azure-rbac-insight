@@ -1,5 +1,0 @@
-include:
-  - project: 'gitlab-ci/ci-private-templates'
-    ref: $CXF_CI_TEMPLATE_VERSION
-    file:
-      - '/pipelines/general-proj-workflow.yml'
