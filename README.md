@@ -1,20 +1,20 @@
-# 🛡️ AzRBAC-Insight
+# 🛡️ azure-rbac-insight
 
-AzRBAC-Insight is a Streamlit-based dashboard designed for deep-dive analysis and visualization of Azure Role-Based Access Control (RBAC) assignments. It empowers cloud administrators and security teams to audit permissions, identify over-privileged identities, and maintain a secure cloud posture.
+azure-rbac-insight is a Streamlit-based dashboard designed for deep-dive analysis and visualization of Azure Role-Based Access Control (RBAC) assignments. It empowers cloud administrators and security teams to audit permissions, identify over-privileged identities, and maintain a secure cloud posture.
 
 ---
 
 ## 1. Project Overview & Architecture
 
 ### About the Project
-AzRBAC-Insight provides a clean, interactive interface to explore complex Azure RBAC data that is otherwise difficult to parse in raw CSV format. It helps answer critical questions like:
+azure-rbac-insight provides a clean, interactive interface to explore complex Azure RBAC data that is otherwise difficult to parse in raw CSV format. It helps answer critical questions like:
 - Who has high-privilege roles across the subscription?
 - What resources have the most direct role assignments?
 - What is the distribution of roles between Users, Groups, and Service Principals?
 
 ### Project Structure
 ```text
-AzRBAC-Insight/
+azure-rbac-insight/
 ├── app.py              # Main Streamlit application and visualization logic
 ├── requirements.txt    # Python dependencies (Pandas, Plotly, Streamlit, etc.)
 ├── Dockerfile          # Multi-stage Docker build for containerization
@@ -49,8 +49,8 @@ To run and test the dashboard on your local machine, follow these steps:
 ### Step-by-Step Setup
 1.  **Clone the Repository**:
     ```bash
-    git clone https://github.com/chinmaymjog/AzRBAC-Insight.git
-    cd AzRBAC-Insight
+    git clone https://github.com/chinmaymjog/azure-rbac-insight.git
+    cd azure-rbac-insight
     ```
 
 2.  **Initialize Virtual Environment**:
@@ -76,7 +76,7 @@ To run and test the dashboard on your local machine, follow these steps:
 
 ## 3. End-User Guide (How to Use)
 
-Using AzRBAC-Insight is straightforward and requires no coding knowledge.
+Using azure-rbac-insight is straightforward and requires no coding knowledge.
 
 ### Getting Started
 1.  **Export Data from Azure**:
