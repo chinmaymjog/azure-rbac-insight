@@ -1,100 +1,59 @@
-# 🛡️ azure-rbac-insight
+# 🛡️ Azure RBAC Insight
 
-azure-rbac-insight is a Streamlit-based dashboard designed for deep-dive analysis and visualization of Azure Role-Based Access Control (RBAC) assignments. It empowers cloud administrators and security teams to audit permissions, identify over-privileged identities, and maintain a secure cloud posture.
+**Azure RBAC Insight** is a Streamlit-powered security dashboard designed for deep-dive analysis and visualization of Azure Role-Based Access Control (RBAC) assignments. 
+
+It empowers cloud administrators to identify over-privileged identities, visualize complex permissions, and maintain a secure cloud posture through interactive data exploration.
 
 ---
 
-## 1. Project Overview & Architecture
+## ✨ Key Features
 
-### About the Project
-azure-rbac-insight provides a clean, interactive interface to explore complex Azure RBAC data that is otherwise difficult to parse in raw CSV format. It helps answer critical questions like:
-- Who has high-privilege roles across the subscription?
-- What resources have the most direct role assignments?
-- What is the distribution of roles between Users, Groups, and Service Principals?
+*   **Visual Insights**: Instantly see role distributions between Users, Groups, and Service Principals using interactive Plotly charts.
+*   **Resource Hotspots**: Identify which Azure resources have the most direct role assignments.
+*   **Granular Filtering**: Slice and dice permission data by Scope, Role Name, and Identity Type.
+*   **Multi-Platform**: Deployable as a Python process, a Docker container, or a Kubernetes pod.
 
-### Project Structure
-```text
-azure-rbac-insight/
-├── app.py              # Main Streamlit application and visualization logic
-├── requirements.txt    # Python dependencies (Pandas, Plotly, Streamlit, etc.)
-├── Dockerfile          # Multi-stage Docker build for containerization
-├── .gitignore          # Repository hygiene (ignores .venv, data/, etc.)
-├── data/               # Local directory for temporary storage of CSV reports
-├── k8s/                # Kubernetes manifests for AKS deployment
-│   └── manifests.yaml  # Deployment and Service definitions
-├── .gitignore          # Repository hygiene (ignores .venv, data/, etc.)
-├── data/               # Local directory for temporary storage of CSV reports
-├── k8s/                # Kubernetes manifests for deployment
-│   └── manifests.yaml  # Deployment and Service definitions
-└── .github/            # GitHub Actions for CI/CD
+---
+
+## 🏗️ Quick Start
+
+### 1. Requirements
+*   Python 3.12+
+*   An Azure Role Assignments CSV export ([See Guide](./HOW_TO_GUIDE.md))
+
+### 2. Installation
+```bash
+git clone https://github.com/chinmaymjog/azure-rbac-insight.git
+cd azure-rbac-insight
+pip install -r requirements.txt
 ```
 
-### High-Level Architecture
-The application follows a simple but effective data-processing pattern:
-1.  **Data Ingestion**: Accepts Azure Role Assignment CSV reports (either via upload or environment variable).
-2.  **Processing Layer**: Uses Pandas to clean column names, extract resource names from long Azure scopes, and filter data dynamically.
-3.  **Visualization Layer**: Leverages Plotly and Streamlit to generate interactive charts and tables.
-4.  **Deployment**: Designed to run as a stateless container in Kubernetes or as a standalone Python process.
+### 3. Run
+```bash
+streamlit run app.py
+```
 
 ---
 
-## 2. How to Test Locally
-
-To run and test the dashboard on your local machine, follow these steps:
-
-### Prerequisites
-- Python 3.12 or higher.
-- A virtual environment is highly recommended.
-
-### Step-by-Step Setup
-1.  **Clone the Repository**:
-    ```bash
-    git clone https://github.com/chinmaymjog/azure-rbac-insight.git
-    cd azure-rbac-insight
-    ```
-
-2.  **Initialize Virtual Environment**:
-    ```bash
-    python3 -m venv .venv
-    source .venv/bin/activate  # On Windows use: .venv\Scripts\activate
-    ```
-
-3.  **Install Dependencies**:
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-4.  **Run the Application**:
-    ```bash
-    streamlit run app.py
-    ```
-
-5.  **Access the Dashboard**:
-    Open your browser and navigate to `http://localhost:8501`.
+## 📖 Documentation
+For detailed instructions on how to export your data from Azure and use the advanced filtering features, check out the:
+👉 **[Comprehensive User Guide](./HOW_TO_GUIDE.md)**
 
 ---
 
-## 3. End-User Guide (How to Use)
+## 🛠️ Deployment
 
-Using azure-rbac-insight is straightforward and requires no coding knowledge.
+### Docker
+```bash
+docker build -t azure-rbac-insight .
+docker run -p 8501:8501 azure-rbac-insight
+```
 
-### Getting Started
-1.  **Export Data from Azure**:
-    - Go to the Azure Portal.
-    - Navigate to **Subscriptions** or **Management Groups**.
-    - Click on **Access Control (IAM)** -> **Role Assignments**.
-    - Click **Download Role Assignments** and check **Children** and **CSV** format.
-
-2.  **Upload to Dashboard**:
-    - Once the dashboard is running, use the **Sidebar** to find the file uploader.
-    - Drag and drop your exported CSV file.
-    - The dashboard will automatically update with your data.
+### Kubernetes (AKS)
+Manifests for deploying to a Kubernetes cluster are provided in the `k8s/` directory.
+```bash
+kubectl apply -f k8s/manifests.yaml
+```
 
 ---
-
-## Technologies Used
-
-- **Frontend/Dashboard**: [Streamlit](https://streamlit.io/)
-- **Data Processing**: [Pandas](https://pandas.pydata.org/)
-- **Charts**: [Plotly Express](https://plotly.com/python/plotly-express/)
-- **Infrastructure**: Docker, Kubernetes, GitHub Actions
+*Maintained by [Chinmay Jog](https://github.com/chinmaymjog)*
