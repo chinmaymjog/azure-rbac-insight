@@ -15,6 +15,8 @@ Azure's Access Control (IAM) blade is great for single-resource checks, but it f
 ## The Solution: AzRBAC-Insight
 AzRBAC-Insight is a lightweight, local Streamlit dashboard that aggregates your Azure role assignments into a single, filterable view.
 
+![AzRBAC-Insight Dashboard](../../docs/images/dashboard-preview.png)
+
 ### ✨ Key Features
 - **Multi-Subscription Support**: Fetch data from dozens of subscriptions in one click.
 - **Visual Analytics**: Instantly spot role distributions and principal types.

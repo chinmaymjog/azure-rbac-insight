@@ -93,7 +93,7 @@ def fetch_all_rbac(selected_subs_dict):
                 
                 all_data.append({
                     'Subscription': name,
-                    'DisplayName': ra.principal_id, # DisplayName is tricky via SDK without Graph call
+                    'Principal (ID)': ra.principal_id, # SDK only returns ID, Name requires Graph API
                     'ObjectId': ra.principal_id,
                     'RoleDefinitionName': role_name,
                     'ObjectType': ra.principal_type,
@@ -105,16 +105,29 @@ def fetch_all_rbac(selected_subs_dict):
     my_bar.empty()
     return pd.DataFrame(all_data)
 
-def process_csv(uploaded_file):
+def process_csv(uploaded_files):
+    all_dfs = []
     try:
-        df = pd.read_csv(uploaded_file)
-        # Clean column names
-        df.columns = [col.strip().replace('\ufeff', '') for col in df.columns]
-        if 'Subscription' not in df.columns:
-            df['Subscription'] = 'Uploaded CSV'
-        return df
+        for file in uploaded_files:
+            temp_df = pd.read_csv(file)
+            # Clean column names
+            temp_df.columns = [col.strip().replace('\ufeff', '') for col in temp_df.columns]
+            # Use filename (minus ext) as sub name if not present or generic
+            sub_name = os.path.splitext(file.name)[0]
+            # Clean up Azure Portal default suffix (e.g., _role-assignments-2024-05-16)
+            for suffix in ["_role-assignments", "-role-assignments", " role-assignments"]:
+                if suffix in sub_name:
+                    sub_name = sub_name.split(suffix)[0]
+            
+            if 'Subscription' not in temp_df.columns:
+                temp_df['Subscription'] = sub_name
+            all_dfs.append(temp_df)
+            
+        if not all_dfs:
+            return pd.DataFrame()
+        return pd.concat(all_dfs, ignore_index=True)
     except Exception as e:
-        st.error(f"Error processing CSV: {e}")
+        st.error(f"Error processing CSV files: {e}")
         return pd.DataFrame()
 
 # --- Sidebar ---
@@ -145,13 +158,13 @@ if input_mode == "Azure SDK (Live)":
         st.sidebar.warning("No subscriptions found. Run 'az login' locally.")
 
 else:
-    st.sidebar.subheader("📄 Upload Report")
-    uploaded_file = st.sidebar.file_uploader("Choose a CSV file (Azure Export)", type="csv")
-    if uploaded_file is not None:
-        df = process_csv(uploaded_file)
+    st.sidebar.subheader("📄 Upload Reports")
+    uploaded_files = st.sidebar.file_uploader("Choose CSV files (Azure Exports)", type="csv", accept_multiple_files=True)
+    if uploaded_files:
+        df = process_csv(uploaded_files)
         if not df.empty:
             st.session_state['df'] = df
-            st.sidebar.success("CSV Uploaded!")
+            st.sidebar.success(f"Uploaded {len(uploaded_files)} files!")
 
 # Load data from session state
 if 'df' in st.session_state:
@@ -167,15 +180,11 @@ if not df.empty:
     # Filters
     st.sidebar.header("🔍 Filters")
     
-    col_filter1, col_filter2 = st.sidebar.columns(2)
+    sub_list = sorted(df['Subscription'].unique())
+    sel_subs = st.sidebar.multiselect("Subscriptions", sub_list, default=sub_list)
     
-    with col_filter1:
-        sub_list = sorted(df['Subscription'].unique())
-        sel_subs = st.multiselect("Subscriptions", sub_list, default=sub_list)
-    
-    with col_filter2:
-        role_list = sorted(df['RoleDefinitionName'].unique())
-        sel_roles = st.multiselect("Roles", role_list, default=[])
+    role_list = sorted(df['RoleDefinitionName'].unique())
+    sel_roles = st.sidebar.multiselect("Roles", role_list, default=role_list)
 
     type_list = sorted(df['ObjectType'].unique().astype(str).tolist())
     sel_types = st.sidebar.multiselect("Principal Types", type_list, default=type_list)
@@ -203,21 +212,23 @@ if not df.empty:
         role_counts = filtered_df['RoleDefinitionName'].value_counts().reset_index().head(10)
         role_counts.columns = ['Role', 'Count']
         fig_roles = px.bar(role_counts, x='Count', y='Role', orientation='h', color='Count', template="plotly_dark")
-        st.plotly_chart(fig_roles, use_container_width=True)
+        st.plotly_chart(fig_roles, width="stretch")
 
     with c2:
         st.subheader("Principal Distribution")
         type_counts = filtered_df['ObjectType'].value_counts().reset_index()
         type_counts.columns = ['Type', 'Count']
         fig_types = px.pie(type_counts, values='Count', names='Type', hole=0.4, template="plotly_dark")
-        st.plotly_chart(fig_types, use_container_width=True)
+        st.plotly_chart(fig_types, width="stretch")
 
     st.divider()
 
     # Table
     st.subheader("📋 Detailed Audit Logs")
-    st.dataframe(filtered_df[['Subscription', 'DisplayName', 'RoleDefinitionName', 'ObjectType', 'Resource Name']], 
-                 use_container_width=True, hide_index=True)
+    # Determine the principal column name based on data
+    p_col = 'Principal (ID)' if 'Principal (ID)' in filtered_df.columns else 'DisplayName'
+    st.dataframe(filtered_df[['Subscription', p_col, 'RoleDefinitionName', 'ObjectType', 'Resource Name']], 
+                 width="stretch", hide_index=True)
 
     if st.button("Clear Cache / Reset"):
         st.session_state.clear()
@@ -239,4 +250,3 @@ else:
 
 # Footer
 st.caption("Azure RBAC Insight - Built for Security Architects")
-c Auditing Tool")
