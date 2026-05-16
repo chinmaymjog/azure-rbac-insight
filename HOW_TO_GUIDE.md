@@ -18,6 +18,9 @@ The dashboard requires a CSV export from the Azure Portal.
     *   **Scope**: Check `Include children` to get the most granular detail.
 7.  Click **Download**.
 
+> [!TIP]
+> **Naming Your Exports**: Before uploading, consider renaming your files to something descriptive (e.g., `production-sub.csv`). The dashboard uses your filenames to label the **Subscription** column, automatically stripping standard Azure suffixes (like `_role-assignments...`) for a clean view.
+
 ---
 
 ## Step 2: Running the Dashboard
@@ -25,14 +28,18 @@ The dashboard requires a CSV export from the Azure Portal.
 ### Option A: Local Run (Python)
 If you have Python installed locally:
 ```bash
-source .venv/bin/activate
+# Install dependencies
+pip install -r requirements.txt
+# Ensure you are logged in for live fetch
+az login
+# Run the app
 streamlit run app.py
 ```
 
-### Option B: Container (Docker)
-Run the pre-built container:
+### Option B: Docker Compose (Recommended for Container)
+Run the application without installing Python locally:
 ```bash
-docker run -p 8501:8501 ghcr.io/chinmaymjog/azure-rbac-insight:latest
+docker-compose up --build
 ```
 
 Open `http://localhost:8501` in your browser.
@@ -43,8 +50,9 @@ Open `http://localhost:8501` in your browser.
 
 Once the dashboard is open:
 
-1.  **Upload**: Drag and drop your downloaded CSV file into the sidebar uploader.
+1.  **Upload**: Drag and drop your downloaded CSV files into the sidebar uploader. You can upload multiple files at once.
 2.  **Filter**: Use the sidebar to filter by:
+    *   **Subscription**: Toggle between different data sources.
     *   **Role Name**: Focus on high-privilege roles like `Owner` or `Contributor`.
     *   **Principal Type**: Compare access between `Users`, `Groups`, and `Service Principals`.
 3.  **Analyze**:
@@ -56,7 +64,7 @@ Once the dashboard is open:
 
 ## 🛡️ Security Best Practices
 *   **Rotate Exports**: Data exported via CSV is a point-in-time snapshot. Re-run your export weekly for accurate auditing.
-*   **Limit Dashboard Access**: If running in Kubernetes, ensure you use the provided [k8s/manifests.yaml](./k8s/manifests.yaml) which includes basic service exposure, but consider adding an Ingress with Auth for production use.
+*   **Secure Your Local Session**: Ensure your `az login` session is terminated when not in use. This tool only uses your local context and never stores credentials.
 
 ---
 *Maintained by [Chinmay Jog](https://github.com/chinmaymjog)*

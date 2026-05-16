@@ -1,0 +1,8 @@
+DisplayName,ObjectId,RoleDefinitionName,ObjectType,Scope,Subscription
+Chinmay Jog,u-1234-5678,Owner,User,/,Production-Subscription
+Security-Admin-Group,g-9876-5432,Contributor,Group,/subscriptions/sub-123/resourceGroups/rg-network,Production-Subscription
+Auto-Publish-SP,s-1122-3344,Contributor,ServicePrincipal,/subscriptions/sub-123/resourceGroups/rg-content,Production-Subscription
+Backup-Operator,u-5566-7788,Backup Operator,User,/subscriptions/sub-123/resourceGroups/rg-storage,Production-Subscription
+ReadOnly-Auditor,u-9900-1122,Reader,User,/,Staging-Subscription
+Pipeline-Runner,s-4433-2211,Contributor,ServicePrincipal,/subscriptions/sub-456/resourceGroups/rg-app,Staging-Subscription
+Dev-User-1,u-7766-5544,Reader,User,/subscriptions/sub-456/resourceGroups/rg-app,Staging-Subscription

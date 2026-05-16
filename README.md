@@ -2,6 +2,8 @@
 
 **Azure RBAC Insight** is a Streamlit-powered security dashboard designed for deep-dive analysis and visualization of Azure Role-Based Access Control (RBAC) assignments across multiple subscriptions.
 
+![Dashboard Preview](./docs/images/dashboard-preview.png)
+
 ---
 
 ## 💡 Why this project?
@@ -24,26 +26,33 @@
 
 ## 🏗️ Quick Start (Local Run)
 
-### Option 1: Python (Recommended)
+### 1. Requirements
+*   **Python**: 3.12+
+*   **Azure Permissions**: You must have at least **Reader** access to the subscription(s) you wish to audit.
+*   **Identity Mapping**: When using **Live Fetch**, the tool displays **Principal IDs**. For human-readable **Display Names**, please use the **CSV Upload** mode.
+
+### 2. Setup
 1.  **Clone**: `git clone https://github.com/chinmaymjog/azure-rbac-insight.git`
 2.  **Install**: `pip install -r requirements.txt`
 3.  **Auth**: Ensure you are logged in via Azure CLI: `az login`
 4.  **Run**: `streamlit run app.py`
 
-### Option 2: Docker Compose
+### 3. Docker Compose
 1.  **Run**: `docker-compose up --build`
 2.  **Access**: Open `http://localhost:8501`
 
 ---
 
 ## 📖 Documentation
-For detailed instructions on how to export CSV data from Azure or deploy to Kubernetes, check the:
-👉 **[Comprehensive User Guide](./HOW_TO_GUIDE.md)**
+For detailed instructions on how to export CSV data from Azure, check the:
+- 👉 **[Comprehensive User Guide](./HOW_TO_GUIDE.md)**
+- 👉 **[Technical Deep-Dive Article](./docs/posts/azure-rbac-insight-article.md)**
 
----
+## 🤝 Contributing
+Contributions are welcome! Please see the **[Contribution Guidelines](./CONTRIBUTING.md)** for details.
 
 ## 🛡️ Security
-This tool uses **DefaultAzureCredential**. It inherits the permissions of your logged-in session. It only requires **Reader** access to the subscription(s) you wish to audit. No data is sent to any external server; everything remains local to your browser session.
+This tool uses **DefaultAzureCredential**. It inherits the permissions of your logged-in session. It only requires **Reader** access to the subscription(s). No data is sent to external servers.
 
 ---
 *Maintained by [Chinmay Jog](https://github.com/chinmaymjog)*
