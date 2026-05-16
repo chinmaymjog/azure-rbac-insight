@@ -46,7 +46,6 @@
 ## 📖 Documentation
 For detailed instructions on how to export CSV data from Azure, check the:
 - 👉 **[Comprehensive User Guide](./HOW_TO_GUIDE.md)**
-- 👉 **[Technical Deep-Dive Article](./docs/posts/azure-rbac-insight-article.md)**
 
 ## 🤝 Contributing
 Contributions are welcome! Please see the **[Contribution Guidelines](./CONTRIBUTING.md)** for details.
