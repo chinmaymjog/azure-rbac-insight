@@ -8,16 +8,17 @@ from azure.mgmt.subscription import SubscriptionClient
 from azure.mgmt.authorization import AuthorizationManagementClient
 
 # Set page config
-st.set_page_config(page_title="AzRBAC-Insight", layout="wide")
+st.set_page_config(page_title="AzRBAC-Insight", layout="wide", page_icon="🛡️")
 
 # Title and Description
 st.title("🛡️ AzRBAC-Insight")
 st.markdown("""
-This dashboard provides a comprehensive analysis of Azure Role Assignments. 
-**Upload your latest report** or explore the default data using the sidebar filters.
+Analyzing Azure Role-Based Access Control (RBAC) across multiple subscriptions.
+**Fetch directly from Azure** (requires `az login`) or **Upload a CSV export**.
 """)
 
-# Azure SDK Integration
+# --- Helper Functions ---
+
 @st.cache_resource
 def get_credentials():
     return DefaultAzureCredential()
@@ -30,160 +31,197 @@ def get_subscriptions():
         subs = list(sub_client.subscriptions.list())
         return {sub.display_name: sub.subscription_id for sub in subs}
     except Exception as e:
-        st.error(f"Error fetching subscriptions: {e}")
+        st.sidebar.error(f"Error fetching subscriptions: {e}")
         return {}
 
 @st.cache_data
-def get_role_assignments(subscription_id):
+def get_role_definitions(subscription_id):
+    """Fetch role definitions to map GUIDs to names."""
     try:
         cred = get_credentials()
         auth_client = AuthorizationManagementClient(cred, subscription_id)
-        assignments = list(auth_client.role_assignments.list_for_subscription())
-        
-        data = []
-        for ra in assignments:
-            # Note: The SDK returns objects, we need to extract attributes
-            # Some attributes might need additional lookup (like DisplayName from ObjectId)
-            # but for now we follow the structure the user expects or what we can get.
-            data.append({
-                'DisplayName': ra.principal_id, # Placeholder if name not directly available
-                'ObjectId': ra.principal_id,
-                'RoleDefinitionName': ra.role_definition_id.split('/')[-1], # Placeholder
-                'ObjectType': ra.principal_type,
-                'Scope': ra.scope,
-            })
-        
-        df = pd.DataFrame(data)
-        if not df.empty:
-            df['Resource Name'] = df['Scope'].apply(extract_resource_name)
-        return df
-    except Exception as e:
-        st.error(f"Error fetching role assignments: {e}")
-        return pd.DataFrame()
+        role_defs = list(auth_client.role_definitions.list(scope=f"/subscriptions/{subscription_id}"))
+        return {rd.id.split('/')[-1]: rd.role_name for rd in role_defs}
+    except Exception:
+        return {}
 
 def extract_resource_name(scope):
     if not isinstance(scope, str) or not scope:
-        return "Unknown"
+        return "Subscription Level"
     # Azure scopes are paths like /subscriptions/xxx/resourceGroups/yyy/...
-    # The last part is usually the resource name
-    return scope.split('/')[-1]
+    parts = scope.split('/')
+    if len(parts) > 4:
+        return parts[-1]
+    return "Subscription Level"
 
 @st.cache_data
-def process_data(data):
-    # Process either a file path or a file-like object
-    if isinstance(data, str):
-        if not os.path.exists(data):
-            return pd.DataFrame()
-        df = pd.read_csv(data)
-    else:
-        df = pd.read_csv(data)
+def fetch_all_rbac(selected_subs_dict):
+    """Fetch and aggregate RBAC assignments from multiple subscriptions."""
+    all_data = []
+    progress_text = "Fetching Azure Data..."
+    my_bar = st.progress(0, text=progress_text)
+    
+    total = len(selected_subs_dict)
+    for i, (name, sub_id) in enumerate(selected_subs_dict.items()):
+        my_bar.progress((i + 1) / total, text=f"Processing {name}...")
+        try:
+            cred = get_credentials()
+            auth_client = AuthorizationManagementClient(cred, sub_id)
+            assignments = list(auth_client.role_assignments.list_for_subscription())
+            
+            # Get role mapping for this sub
+            role_map = get_role_definitions(sub_id)
+            
+            for ra in assignments:
+                role_def_id = ra.role_definition_id.split('/')[-1]
+                role_name = role_map.get(role_def_id, role_def_id)
+                
+                all_data.append({
+                    'Subscription': name,
+                    'DisplayName': ra.principal_id, # DisplayName is tricky via SDK without Graph call
+                    'ObjectId': ra.principal_id,
+                    'RoleDefinitionName': role_name,
+                    'ObjectType': ra.principal_type,
+                    'Scope': ra.scope,
+                })
+        except Exception as e:
+            st.error(f"Failed to fetch for {name}: {e}")
+            
+    my_bar.empty()
+    return pd.DataFrame(all_data)
+
+def process_csv(uploaded_file):
+    try:
+        df = pd.read_csv(uploaded_file)
+        # Clean column names
+        df.columns = [col.strip().replace('\ufeff', '') for col in df.columns]
+        if 'Subscription' not in df.columns:
+            df['Subscription'] = 'Uploaded CSV'
+        return df
+    except Exception as e:
+        st.error(f"Error processing CSV: {e}")
+        return pd.DataFrame()
+
+# --- Sidebar ---
+
+st.sidebar.header("📥 Data Input")
+
+# Mode Selection
+input_mode = st.sidebar.radio("Input Source", ["Azure SDK (Live)", "CSV Upload (Offline)"])
+
+df = pd.DataFrame()
+
+if input_mode == "Azure SDK (Live)":
+    st.sidebar.subheader("🔌 Azure Connection")
+    subscriptions = get_subscriptions()
+    if subscriptions:
+        selected_sub_names = st.sidebar.multiselect("Select Subscriptions", 
+                                                   options=list(subscriptions.keys()),
+                                                   default=list(subscriptions.keys())[:1] if subscriptions else [])
         
-    # Clean column names (strip BOM or whitespace)
-    df.columns = [col.strip().replace('\ufeff', '') for col in df.columns]
-    
-    # Add Simplified Scope (Resource Name)
-    if 'Scope' in df.columns:
-        df['Resource Name'] = df['Scope'].apply(extract_resource_name)
-    
-    return df
+        if st.sidebar.button("Fetch Data"):
+            selected_dict = {name: subscriptions[name] for name in selected_sub_names}
+            with st.spinner("Fetching data from Azure..."):
+                df = fetch_all_rbac(selected_dict)
+                if not df.empty:
+                    st.session_state['df'] = df
+                    st.sidebar.success(f"Fetched {len(df)} assignments!")
+    else:
+        st.sidebar.warning("No subscriptions found. Run 'az login' locally.")
 
-# Sidebar for Configuration and Azure Fetching
-st.sidebar.header("🔌 Azure Connection")
-
-subscriptions = get_subscriptions()
-if subscriptions:
-    selected_sub_name = st.sidebar.selectbox("Select Subscription", options=list(subscriptions.keys()))
-    selected_sub_id = subscriptions[selected_sub_name]
-    
-    if st.sidebar.button("Fetch Role Assignments"):
-        with st.spinner(f"Fetching data for {selected_sub_name}..."):
-            df = get_role_assignments(selected_sub_id)
-            if not df.empty:
-                st.session_state['df'] = df
-                st.sidebar.success(f"Fetched {len(df)} assignments!")
-            else:
-                st.sidebar.warning("No data found or error occurred.")
 else:
-    st.sidebar.warning("No subscriptions found. Please ensure you are logged in (e.g., via 'az login').")
+    st.sidebar.subheader("📄 Upload Report")
+    uploaded_file = st.sidebar.file_uploader("Choose a CSV file (Azure Export)", type="csv")
+    if uploaded_file is not None:
+        df = process_csv(uploaded_file)
+        if not df.empty:
+            st.session_state['df'] = df
+            st.sidebar.success("CSV Uploaded!")
 
 # Load data from session state
-df = st.session_state.get('df', pd.DataFrame())
+if 'df' in st.session_state:
+    df = st.session_state['df']
+
+# --- Dashboard Logic ---
 
 if not df.empty:
-    # Sidebar Filters
+    # Add Resource Name helper
+    if 'Resource Name' not in df.columns and 'Scope' in df.columns:
+        df['Resource Name'] = df['Scope'].apply(extract_resource_name)
+
+    # Filters
     st.sidebar.header("🔍 Filters")
     
-    # Resource Name Filter (Simplified Scope)
-    all_resources = sorted(df['Resource Name'].unique())
-    selected_resources = st.sidebar.multiselect("Select Resource Name", options=all_resources, default=[])
+    col_filter1, col_filter2 = st.sidebar.columns(2)
     
-    # Role Filter
-    all_roles = sorted(df['RoleDefinitionName'].unique())
-    selected_roles = st.sidebar.multiselect("Select Roles", options=all_roles, default=[])
+    with col_filter1:
+        sub_list = sorted(df['Subscription'].unique())
+        sel_subs = st.multiselect("Subscriptions", sub_list, default=sub_list)
     
-    # Object Type Filter
-    all_types = sorted(df['ObjectType'].unique().astype(str).tolist())
-    selected_types = st.sidebar.multiselect("Select Object Types", options=all_types, default=[])
+    with col_filter2:
+        role_list = sorted(df['RoleDefinitionName'].unique())
+        sel_roles = st.multiselect("Roles", role_list, default=[])
 
-    # Display Name Filter
-    all_names = sorted(df['DisplayName'].dropna().unique().astype(str).tolist())
-    selected_names = st.sidebar.multiselect("Select Display Names", options=all_names, default=[])
+    type_list = sorted(df['ObjectType'].unique().astype(str).tolist())
+    sel_types = st.sidebar.multiselect("Principal Types", type_list, default=type_list)
 
     # Apply Filters
-    filtered_df = df.copy()
-    if selected_resources:
-        filtered_df = filtered_df[filtered_df['Resource Name'].isin(selected_resources)]
-    if selected_roles:
-        filtered_df = filtered_df[filtered_df['RoleDefinitionName'].isin(selected_roles)]
-    if selected_types:
-        filtered_df = filtered_df[filtered_df['ObjectType'].astype(str).isin(selected_types)]
-    if selected_names:
-        filtered_df = filtered_df[filtered_df['DisplayName'].astype(str).isin(selected_names)]
+    filtered_df = df[df['Subscription'].isin(sel_subs)]
+    filtered_df = filtered_df[filtered_df['ObjectType'].astype(str).isin(sel_types)]
+    if sel_roles:
+        filtered_df = filtered_df[filtered_df['RoleDefinitionName'].isin(sel_roles)]
 
-    # Metrics Row
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric("Total Assignments", len(filtered_df))
-    with col2:
-        st.metric("Unique Roles", filtered_df['RoleDefinitionName'].nunique())
-    with col3:
-        st.metric("Unique Principals", filtered_df['ObjectId'].nunique())
-    with col4:
-        st.metric("Unique Resources", filtered_df['Resource Name'].nunique())
+    # Metrics
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Assignments", len(filtered_df))
+    m2.metric("Unique Roles", filtered_df['RoleDefinitionName'].nunique())
+    m3.metric("Principals", filtered_df['ObjectId'].nunique())
+    m4.metric("Resources", filtered_df['Resource Name'].nunique())
 
     st.divider()
 
-    # Visualizations
-    col_chart1, col_chart2 = st.columns(2)
+    # Visuals
+    c1, c2 = st.columns(2)
     
-    with col_chart1:
-        st.subheader("Top Roles by number of assignments")
+    with c1:
+        st.subheader("Top Roles")
         role_counts = filtered_df['RoleDefinitionName'].value_counts().reset_index().head(10)
         role_counts.columns = ['Role', 'Count']
-        fig_roles = px.bar(role_counts, x='Count', y='Role', orientation='h', 
-                          color='Count', color_continuous_scale='Viridis')
-        fig_roles.update_layout(yaxis={'categoryorder':'total ascending'})
+        fig_roles = px.bar(role_counts, x='Count', y='Role', orientation='h', color='Count', template="plotly_dark")
         st.plotly_chart(fig_roles, use_container_width=True)
 
-    with col_chart2:
-        st.subheader("Assignments by Object Type")
+    with c2:
+        st.subheader("Principal Distribution")
         type_counts = filtered_df['ObjectType'].value_counts().reset_index()
         type_counts.columns = ['Type', 'Count']
-        fig_types = px.pie(type_counts, values='Count', names='Type', hole=0.4,
-                          color_discrete_sequence=px.colors.qualitative.Pastel)
+        fig_types = px.pie(type_counts, values='Count', names='Type', hole=0.4, template="plotly_dark")
         st.plotly_chart(fig_types, use_container_width=True)
 
     st.divider()
 
-    # Data Table
-    st.subheader("📋 Detailed Assignment Data")
-    # Show Resource Name instead of Scope in the default view
-    st.dataframe(filtered_df[['DisplayName', 'RoleDefinitionName', 'ObjectType', 'Resource Name']], use_container_width=True)
+    # Table
+    st.subheader("📋 Detailed Audit Logs")
+    st.dataframe(filtered_df[['Subscription', 'DisplayName', 'RoleDefinitionName', 'ObjectType', 'Resource Name']], 
+                 use_container_width=True, hide_index=True)
 
+    if st.button("Clear Cache / Reset"):
+        st.session_state.clear()
+        st.rerun()
 
 else:
-    st.info("👋 Welcome! Select a subscription and click 'Fetch Role Assignments' to begin.")
+    st.info("👋 Welcome! Fetch data from Azure or upload a CSV export to begin your RBAC audit.")
+    
+    with st.expander("Why AzRBAC-Insight?"):
+        st.write("""
+        Auditing RBAC via the Azure Portal can be tedious, especially when you need to see who has access to what 
+        across dozens of subscriptions and thousands of resources. 
+        
+        **AzRBAC-Insight** was built to provide a unified, filterable view to:
+        1. Identify over-privileged identities.
+        2. Spot "Hotspot" resources with too many direct assignments.
+        3. Compare permissions across multiple subscriptions in seconds.
+        """)
 
 # Footer
-st.markdown("---")
-st.caption("RBAC Dashboard - Dynamic Auditing Tool")
+st.caption("Azure RBAC Insight - Built for Security Architects")
+c Auditing Tool")

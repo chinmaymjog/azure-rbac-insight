@@ -1,59 +1,49 @@
 # 🛡️ Azure RBAC Insight
 
-**Azure RBAC Insight** is a Streamlit-powered security dashboard designed for deep-dive analysis and visualization of Azure Role-Based Access Control (RBAC) assignments. 
+**Azure RBAC Insight** is a Streamlit-powered security dashboard designed for deep-dive analysis and visualization of Azure Role-Based Access Control (RBAC) assignments across multiple subscriptions.
 
-It empowers cloud administrators to identify over-privileged identities, visualize complex permissions, and maintain a secure cloud posture through interactive data exploration.
+---
+
+## 💡 Why this project?
+
+> "I was tasked with reviewing RBAC across all our subscriptions. Navigating the Azure Portal to check permissions on every individual resource was tedious and fragmented. I needed a way to see the 'big picture'—to filter by identity, spot over-privileged accounts, and identify resource hotspots in seconds. So, I built this tool."
 
 ---
 
 ## ✨ Key Features
 
-*   **Visual Insights**: Instantly see role distributions between Users, Groups, and Service Principals using interactive Plotly charts.
-*   **Resource Hotspots**: Identify which Azure resources have the most direct role assignments.
-*   **Granular Filtering**: Slice and dice permission data by Scope, Role Name, and Identity Type.
-*   **Multi-Platform**: Deployable as a Python process, a Docker container, or a Kubernetes pod.
+*   **Multi-Subscription Fetch**: Aggregate role assignments from all your Azure subscriptions in one click.
+*   **Dual-Mode Ingestion**: 
+    *   **Live**: Fetch data directly via Azure SDK (requires `az login`).
+    *   **Offline**: Upload CSV exports from the Azure Portal for air-gapped analysis.
+*   **Visual Analytics**: Interactive Plotly charts for Role Distribution and Principal Types.
+*   **Granular Filtering**: Slice by Subscription, Role Name, and Resource Scope.
+*   **Zero-Footprint**: Runs entirely on your local machine or in a lightweight container.
 
 ---
 
-## 🏗️ Quick Start
+## 🏗️ Quick Start (Local Run)
 
-### 1. Requirements
-*   Python 3.12+
-*   An Azure Role Assignments CSV export ([See Guide](./HOW_TO_GUIDE.md))
+### Option 1: Python (Recommended)
+1.  **Clone**: `git clone https://github.com/chinmaymjog/azure-rbac-insight.git`
+2.  **Install**: `pip install -r requirements.txt`
+3.  **Auth**: Ensure you are logged in via Azure CLI: `az login`
+4.  **Run**: `streamlit run app.py`
 
-### 2. Installation
-```bash
-git clone https://github.com/chinmaymjog/azure-rbac-insight.git
-cd azure-rbac-insight
-pip install -r requirements.txt
-```
-
-### 3. Run
-```bash
-streamlit run app.py
-```
+### Option 2: Docker Compose
+1.  **Run**: `docker-compose up --build`
+2.  **Access**: Open `http://localhost:8501`
 
 ---
 
 ## 📖 Documentation
-For detailed instructions on how to export your data from Azure and use the advanced filtering features, check out the:
+For detailed instructions on how to export CSV data from Azure or deploy to Kubernetes, check the:
 👉 **[Comprehensive User Guide](./HOW_TO_GUIDE.md)**
 
 ---
 
-## 🛠️ Deployment
-
-### Docker
-```bash
-docker build -t azure-rbac-insight .
-docker run -p 8501:8501 azure-rbac-insight
-```
-
-### Kubernetes (AKS)
-Manifests for deploying to a Kubernetes cluster are provided in the `k8s/` directory.
-```bash
-kubectl apply -f k8s/manifests.yaml
-```
+## 🛡️ Security
+This tool uses **DefaultAzureCredential**. It inherits the permissions of your logged-in session. It only requires **Reader** access to the subscription(s) you wish to audit. No data is sent to any external server; everything remains local to your browser session.
 
 ---
 *Maintained by [Chinmay Jog](https://github.com/chinmaymjog)*
