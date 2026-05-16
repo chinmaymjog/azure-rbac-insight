@@ -2,7 +2,7 @@
 
 **Azure RBAC Insight** is a Streamlit-powered security dashboard designed for deep-dive analysis and visualization of Azure Role-Based Access Control (RBAC) assignments across multiple subscriptions.
 
-![Dashboard Preview](./docs/images/dashboard-preview.png)
+![Dashboard Preview](./docs/assets/dashboard-preview.png)
 
 ---
 
