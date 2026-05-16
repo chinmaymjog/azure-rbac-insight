@@ -25,14 +25,18 @@ The dashboard requires a CSV export from the Azure Portal.
 ### Option A: Local Run (Python)
 If you have Python installed locally:
 ```bash
-source .venv/bin/activate
+# Install dependencies
+pip install -r requirements.txt
+# Ensure you are logged in for live fetch
+az login
+# Run the app
 streamlit run app.py
 ```
 
-### Option B: Container (Docker)
-Run the pre-built container:
+### Option B: Docker Compose (Recommended for Container)
+Run the application without installing Python locally:
 ```bash
-docker run -p 8501:8501 ghcr.io/chinmaymjog/azure-rbac-insight:latest
+docker-compose up --build
 ```
 
 Open `http://localhost:8501` in your browser.
@@ -56,7 +60,7 @@ Once the dashboard is open:
 
 ## 🛡️ Security Best Practices
 *   **Rotate Exports**: Data exported via CSV is a point-in-time snapshot. Re-run your export weekly for accurate auditing.
-*   **Limit Dashboard Access**: If running in Kubernetes, ensure you use the provided [k8s/manifests.yaml](./k8s/manifests.yaml) which includes basic service exposure, but consider adding an Ingress with Auth for production use.
+*   **Secure Your Local Session**: Ensure your `az login` session is terminated when not in use. This tool only uses your local context and never stores credentials.
 
 ---
 *Maintained by [Chinmay Jog](https://github.com/chinmaymjog)*

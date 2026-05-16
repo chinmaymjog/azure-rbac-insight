@@ -38,9 +38,11 @@
 
 ## 📖 Documentation
 For detailed instructions on how to export CSV data from Azure or deploy to Kubernetes, check the:
-👉 **[Comprehensive User Guide](./HOW_TO_GUIDE.md)**
+- 👉 **[Comprehensive User Guide](./HOW_TO_GUIDE.md)**
+- 👉 **[Technical Deep-Dive Article](./docs/posts/azure-rbac-insight-article.md)**
 
----
+## 🤝 Contributing
+Contributions are welcome! Please see the **[Contribution Guidelines](./CONTRIBUTING.md)** for details on how to get started.
 
 ## 🛡️ Security
 This tool uses **DefaultAzureCredential**. It inherits the permissions of your logged-in session. It only requires **Reader** access to the subscription(s) you wish to audit. No data is sent to any external server; everything remains local to your browser session.
