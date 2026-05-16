@@ -10,6 +10,21 @@ from azure.mgmt.authorization import AuthorizationManagementClient
 # Set page config
 st.set_page_config(page_title="AzRBAC-Insight", layout="wide", page_icon="🛡️")
 
+# Custom CSS for Premium Look
+st.markdown("""
+    <style>
+    .stMetric {
+        background-color: rgba(255, 255, 255, 0.05);
+        padding: 15px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .main {
+        background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
 # Title and Description
 st.title("🛡️ AzRBAC-Insight")
 st.markdown("""
