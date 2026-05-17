@@ -54,4 +54,4 @@ Contributions are welcome! Please see the **[Contribution Guidelines](./CONTRIBU
 This tool uses **DefaultAzureCredential**. It inherits the permissions of your logged-in session. It only requires **Reader** access to the subscription(s). No data is sent to external servers.
 
 ---
-*Maintained by [Chinmay Jog](https://github.com/chinmaymjog)*
+*Maintained by [Chinmay Jog](https://github.com/chinmaymjog) | 📖 [Read my articles on Medium](https://medium.com/@chinmaymjog)*
