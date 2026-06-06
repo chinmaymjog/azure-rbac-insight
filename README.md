@@ -44,8 +44,11 @@
 ---
 
 ## 📖 Documentation
-For detailed instructions on how to export CSV data from Azure, check the:
-- 👉 **[Comprehensive User Guide](./HOW_TO_GUIDE.md)**
+Use these documents depending on what you need:
+- 👉 **[Comprehensive User Guide](./HOW_TO_GUIDE.md)** for end-user setup and RBAC export flow.
+- 👉 **[Project Spec](./docs/project-spec.md)** for goals, scope, and success criteria.
+- 👉 **[Architecture Notes](./docs/architecture.md)** for design decisions and runtime boundaries.
+- 👉 **[Task Tracker](./docs/tasks.md)** for active work, completed validation, and next steps.
 
 ## 🤝 Contributing
 Contributions are welcome! Please see the **[Contribution Guidelines](./CONTRIBUTING.md)** for details.
