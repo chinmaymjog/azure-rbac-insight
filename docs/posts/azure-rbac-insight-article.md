@@ -12,15 +12,16 @@ Azure's Access Control (IAM) blade is great for single-resource checks, but it f
 
 ...the portal becomes a bottleneck.
 
-## The Solution: AzRBAC-Insight
-AzRBAC-Insight is a lightweight, local Streamlit dashboard that aggregates your Azure role assignments into a single, filterable view.
+## The Solution: Azure RBAC Insight
+Azure RBAC Insight is a lightweight, local Streamlit dashboard that aggregates your Azure role assignments into a single, filterable view.
 
-![AzRBAC-Insight Dashboard](https://raw.githubusercontent.com/chinmaymjog/azure-rbac-insight/main/docs/assets/dashboard-preview.png)
+![Azure RBAC Insight Dashboard](https://raw.githubusercontent.com/chinmaymjog/azure-rbac-insight/main/docs/assets/dashboard-preview.png)
 
 ### ✨ Key Features
 - **Multi-Subscription Support**: Fetch data from dozens of subscriptions in one click.
 - **Visual Analytics**: Instantly spot role distributions and principal types.
 - **Granular Auditing**: Drill down into specific identities and resource scopes with ease.
+- **Dual-Mode Ingestion**: Use live Azure fetch with `az login` or work from offline CSV exports.
 
 ![Detailed Audit Logs](https://raw.githubusercontent.com/chinmaymjog/azure-rbac-insight/main/docs/assets/audit-logs-preview.png)
 
@@ -28,7 +29,7 @@ AzRBAC-Insight is a lightweight, local Streamlit dashboard that aggregates your 
 - **Offline Mode**: Already have a CSV export? Just upload it for instant analysis.
 
 ## 🚀 How to Use It
-The tool is open-source and ready to run via Python or Docker.
+The tool is open-source and ready to run via Python or Docker, following the same end-user flow documented in the repository README.
 
 ```bash
 # Clone and Run
@@ -42,6 +43,8 @@ streamlit run app.py
 Built with a platform engineering mindset, the tool uses the Azure SDK for Python to securely fetch live data and Plotly for interactive visualizations.
 
 Check out the project on GitHub: [Azure RBAC Insight](https://github.com/chinmaymjog/azure-rbac-insight)
+
+For the full user flow, troubleshooting steps, and project docs, start with the repository README and linked guide files.
 
 ---
 *Follow me for more DevOps and Platform Engineering tools!*
