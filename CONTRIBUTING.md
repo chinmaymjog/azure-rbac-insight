@@ -4,7 +4,7 @@ Thank you for contributing to **Azure RBAC Insight**! This guide ensures that th
 
 ## 🛠️ Development Workflow
 
-1.  **Fork and Clone**: Create a feature branch for your changes.
+1.  **Branch First**: Do not commit directly to `main`. Create a short-lived branch such as `feature/<topic>` or `bugfix/<topic>`.
 2.  **Environment Setup**:
     *   Python 3.12+ recommended.
     *   Install dependencies: `pip install -r requirements.txt`.
@@ -14,6 +14,9 @@ Thank you for contributing to **Azure RBAC Insight**! This guide ensures that th
     *   [ ] Test **CSV Upload**: Use a sample Azure RBAC export.
 4.  **Docker Validation**:
     *   [ ] Run `docker-compose up --build` and verify the container starts correctly.
+5.  **Commit and PR**:
+    *   Use Conventional Commits, for example `feat: add scope hotspot chart` or `docs: update csv export guide`.
+    *   Open a Pull Request with summary, testing performed, and any screenshots if the UI changed.
 
 ## 🏗️ Adding New Features
 
@@ -44,6 +47,9 @@ Before submitting a Pull Request, verify the following:
 
 ## 📝 Documentation Requirements
 - Update `HOW_TO_GUIDE.md` if you add new auditing steps.
+- Update `docs/project-spec.md` if scope or success criteria change.
+- Update `docs/architecture.md` when a non-trivial design decision is introduced.
+- Update `docs/tasks.md` when starting or finishing tracked work.
 - If you add a new dependency, ensure it's listed in `requirements.txt`.
 
 ---
