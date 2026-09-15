@@ -1,142 +1,62 @@
-# Architecture and Decisions
+# Architecture
 
-## Document Control
+## What This Is
 
-- Project: Azure RBAC Insight
-- Owner: Chinmay Jog
-- Last updated: 2026-06-06
-- Version: 0.1
+A single-file Streamlit dashboard (`app.py`) for reviewing Azure RBAC
+role assignments. It supports two ingestion paths into the same
+filterable UI: live fetch via the Azure SDK, or an offline CSV export
+from the Azure Portal. See the Quick Start in `README.md`.
 
-## How To Use This File
+## How It Works
 
-- Explain design decisions for future contributors.
-- Keep decisions traceable to requirement IDs in docs/project-spec.md.
-- Add an ADR-lite entry when a material design choice changes.
+1. The sidebar's Input Source radio picks live fetch or CSV upload.
+2. Live mode calls `get_subscriptions()` then `fetch_all_rbac()`,
+   pulling role assignments per subscription via
+   `AuthorizationManagementClient` and mapping role definition GUIDs
+   to names. CSV mode calls `process_csv()`, which normalizes column
+   names and derives a `Subscription` label from the filename when the
+   export doesn't already have one.
+3. The resulting DataFrame is validated against `REQUIRED_COLUMNS`
+   (`Subscription`, `RoleDefinitionName`, `ObjectType`, `ObjectId`) -
+   a mismatch shows an actionable error instead of continuing into a
+   render that would crash.
+4. A `Resource Name` column is derived from `Scope` when present, or
+   falls back to `"Unknown"` when it isn't - `Scope` is the one
+   optional column, since a CSV export may omit it even though live
+   fetch always includes it.
+5. Sidebar multiselects filter the DataFrame in place; metrics, two
+   Plotly charts, and a detail table render from the filtered result.
 
-## System Context
+## Key Decisions
 
-### Business and Technical Context
+- **Decision:** Support both live Azure SDK access and offline CSV
+  upload in the same app.
+  **Why:** Some users can access Azure live; others need offline
+  review from an export (restricted environments, point-in-time audit
+  snapshots).
+  **Revisit if:** One mode turns out to cover the vast majority of
+  real usage and the other becomes maintenance overhead.
+- **Decision:** Keep execution entirely local - no backend, no remote
+  storage of RBAC data.
+  **Why:** RBAC exports are sensitive; a local-only tool has a much
+  simpler security posture than a hosted one.
+  **Revisit if:** Team-shared dashboards become a real need.
+- **Decision:** Validate required columns before rendering, rather
+  than letting a missing column surface as a `KeyError` mid-render.
+  **Why:** A CSV schema mismatch (a different Azure Portal export
+  version, a hand-edited file) is a normal, expected failure mode for
+  offline mode - it should tell the user what's wrong, not crash.
+  **Revisit if:** Azure Portal's export format stabilizes enough that
+  this becomes dead code.
 
-Azure RBAC Insight helps engineers and auditors inspect Azure role assignments without relying on repetitive portal navigation. It supports both connected and disconnected workflows so the same tool can be used in day-to-day operations and in restricted review environments.
+## Known Risks / Rough Edges
 
-### Architecture Goals
-
-- Support live Azure access and offline CSV analysis in the same UI.
-- Keep data processing local to reduce security and compliance risk.
-
-## High-Level Design
-
-### Component Overview
-
-| Component | Responsibility | Owner |
-| --------- | -------------- | ----- |
-| Streamlit UI | Collect inputs, render filters, tables, and charts | Project |
-| Azure ingestion layer | Fetch subscriptions, roles, and assignments in live mode | Project |
-| CSV ingestion layer | Normalize exported RBAC CSV data for offline use | Project |
-| Data shaping layer | Standardize columns and derive chart-ready summaries | Project |
-
-## Data and Control Flow
-
-### Request/Response Flow
-
-1. User chooses live fetch or CSV upload.
-2. Data is fetched or loaded into memory.
-3. The app normalizes records into a consistent tabular structure.
-4. Filters are applied in-memory.
-5. Charts and detailed tables are rendered from the filtered dataset.
-
-### State and Data Model Notes
-
-- Streamlit session state preserves user progress between interactions.
-- Cached data should be used for expensive fetch or transform paths.
-- RBAC data is treated as transient runtime state, not repository state.
-
-### Failure Paths
-
-- Azure auth failures should fail early with a clear message to re-run `az login`.
-- CSV schema mismatches should surface actionable guidance rather than stack traces.
-- Large data loads should degrade gracefully through cached processing and filtered views.
-
-## Deployment Architecture
-
-### Environments
-
-- Local Python execution
-- Local Docker container execution
-
-### Runtime Topology
-
-- Single-process Streamlit app
-- Azure CLI / SDK access only in live mode
-- No remote application database or service dependency
-
-### Release and Rollback Strategy
-
-- Repository changes follow branch -> PR -> merge workflow.
-- Rollback is performed by redeploying or re-running the previous known-good container or commit.
-
-## Security and Compliance
-
-- AuthN/AuthZ model: inherited Azure identity through local Azure CLI or uploaded local files.
-- Secret management: no secrets in repo; runtime credentials stay in local user context only.
-- Input validation boundaries: uploaded CSVs and Azure API responses must be normalized before rendering.
-- Audit/logging requirements: avoid writing RBAC dataset contents to committed artifacts or debug files.
-
-## Observability Strategy
-
-- Logs: local app logs for ingestion and parsing failures.
-- Metrics: not currently instrumented.
-- Traces: not currently instrumented.
-- Alerts/SLOs: not applicable for local-first execution.
-
-## External Dependencies
-
-| Dependency | Purpose | SLA/Risk | Backup Plan |
-| ---------- | ------- | -------- | ----------- |
-| Azure SDK | Live RBAC retrieval | API/schema drift risk | Use CSV upload mode |
-| Azure CLI auth | Local credential source | Login/session expiry | Re-auth with `az login` |
-| Streamlit | Dashboard UI runtime | Package/runtime regression | Pin versions and run local smoke test |
-
-## Architecture Decision Records (ADR-lite)
-
-### ADR-001
-
-- ID: ADR-001
-- Title: Support dual ingestion modes
-- Status: Accepted
-- Date: 2026-06-06
-- Context: Some users can access Azure live, while others need offline review from exports.
-- Decision: Keep both live Azure SDK and CSV upload modes in the same application.
-- Requirement links: FR-001, FR-002, NFR-001
-- Alternatives considered: live-only dashboard, CSV-only dashboard
-- Consequences: More ingestion logic to maintain, but broader operational usability.
-- Review trigger: Azure APIs or CSV schemas change materially.
-
-### ADR-002
-
-- ID: ADR-002
-- Title: Keep execution local-first
-- Status: Accepted
-- Date: 2026-06-06
-- Context: RBAC exports can contain sensitive permission data.
-- Decision: Run analysis locally without a managed backend.
-- Requirement links: NFR-001, NFR-002
-- Alternatives considered: hosted dashboard with remote storage
-- Consequences: Simpler security posture, but limited collaboration features.
-- Review trigger: future need for team-shared dashboards.
-
-## Requirement to Design Mapping
-
-| Requirement ID | Architectural Element | ADR ID | Notes |
-| -------------- | --------------------- | ------ | ----- |
-| FR-001 | Streamlit UI + ingestion layers | ADR-001 | Unified analysis path |
-| FR-002 | Azure ingestion and CSV ingestion | ADR-001 | Dual-mode support |
-| FR-003 | Data shaping + filterable UI | ADR-001 | Interactive review |
-| NFR-001 | Local-first runtime model | ADR-002 | Avoid remote data storage |
-| NFR-002 | Local Python and Docker execution | ADR-002 | Fast onboarding |
-
-## Pending Decisions
-
-- Decision needed: whether to add automated tests for ingestion transforms.
-- Owner: Chinmay Jog
-- Due date: 2026-06-30
+- No automated tests - `app.py` is a single Streamlit script with no
+  test suite. `docs/tasks.md` tracks this as a known gap.
+- Live mode's Azure SDK response only includes principal object IDs,
+  not display names - CSV mode (which includes `DisplayName` from the
+  Portal export) is the better choice when human-readable identity
+  names matter.
+- Large multi-subscription live fetches run sequentially per
+  subscription with no concurrency - fine for a handful of
+  subscriptions, slow for dozens.
