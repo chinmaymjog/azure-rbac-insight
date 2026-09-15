@@ -115,7 +115,7 @@ Best for:
 - Offline analysis
 - Human-readable display names from Azure exports
 
-Detailed export instructions are in [HOW_TO_GUIDE.md](/Users/chinmayjog/repos/personal/azure-rbac-insight/HOW_TO_GUIDE.md).
+Detailed export instructions are in [HOW_TO_GUIDE.md](./HOW_TO_GUIDE.md).
 
 ### 4. Verify Health
 

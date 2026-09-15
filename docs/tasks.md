@@ -1,54 +1,31 @@
-# Task Tracker
+# Tasks
 
-## Document Control
+Keep this short and current. Delete finished work you don't need a
+record of - this is a working list, not an audit log.
 
-- Project: Azure RBAC Insight
-- Owner: Chinmay Jog
-- Last updated: 2026-06-06
-- Version: 0.1
+## Now
 
-## How To Use This File
+- [ ] ...
 
-- Track current work only.
-- Keep each task tied to requirement IDs from docs/project-spec.md.
-- Record validation evidence for completed work.
+## Next
 
-## Current Focus
-
-- Theme: Repository alignment and maintainability
-- Current objective: Bring the project in line with shared engineering-system repo practices.
-- This week target: Standardize docs and repo hygiene without changing app behavior.
-
-## Now (Do First)
-
-| ID | Task | Requirement IDs | Owner | Verification | Status |
-| -- | ---- | --------------- | ----- | ------------ | ------ |
-| T-001 | Add standard project docs set for scope, architecture, and tasks | NFR-002 | Human+AI | Files present under docs/ | Done |
-| T-002 | Align repo hygiene and contribution workflow with engineering standards | NFR-001, NFR-002 | Human+AI | README, CONTRIBUTING.md, and .gitignore updated | Done |
-
-## Next (Queue)
-
-| ID | Task | Requirement IDs | Verification | Notes |
-| -- | ---- | --------------- | ------------ | ----- |
-| T-003 | Add lightweight validation for CSV schema handling | FR-002 | Test command or manual sample run | Reduce ingestion regression risk |
-| T-004 | Document troubleshooting for Azure live fetch failures | FR-001, NFR-002 | HOW_TO_GUIDE.md update | Improve first-run experience |
-
-## Later (Backlog)
-
-| ID | Task | Requirement IDs | Notes |
-| -- | ---- | --------------- | ----- |
-| T-005 | Add automated smoke test for local startup | NFR-002 | Validate Streamlit boot path |
-| T-006 | Add export or reporting view for filtered results | FR-003 | Useful for audit handoff |
+- [ ] Add automated smoke test for local startup (validate the
+      Streamlit boot path).
+- [ ] Add export/reporting view for filtered results - useful for
+      audit handoff.
 
 ## Done
 
-| ID | Completed On | Requirement IDs | Validation Evidence | Notes |
-| -- | ------------ | --------------- | ------------------- | ----- |
-| T-001 | 2026-06-06 | NFR-002 | docs/project-spec.md, docs/architecture.md, docs/tasks.md added | Repo alignment work |
-| T-002 | 2026-06-06 | NFR-001, NFR-002 | README.md, CONTRIBUTING.md, .gitignore updated | Standardized repo hygiene |
-
-## Blocked
-
-| ID | Blocker | Owner | Mitigation | Next Check |
-| -- | ------- | ----- | ---------- | ---------- |
-| T-... |  |  |  | YYYY-MM-DD |
+- [x] Fixed a `KeyError` crash when an uploaded CSV is missing
+      `Subscription`/`RoleDefinitionName`/`ObjectType`/`ObjectId` -
+      now shows an actionable error and stops instead of crashing
+      mid-render; a missing `Scope` (optional) now degrades to
+      `Resource Name = "Unknown"` instead of crashing three sections
+      later (2026-09-15)
+- [x] Fixed the Roles filter silently showing all roles when every
+      role was deselected, inconsistent with how the Subscriptions
+      and Principal Types filters behave (2026-09-15)
+- [x] Fixed a broken README link pointing at an absolute local
+      filesystem path instead of a relative one (2026-09-15)
+- [x] De-bloated `docs/project-spec.md`/`docs/architecture.md` to a
+      lightweight format (2026-09-15)
