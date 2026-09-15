@@ -172,14 +172,30 @@ if 'df' in st.session_state:
 
 # --- Dashboard Logic ---
 
+REQUIRED_COLUMNS = ['Subscription', 'RoleDefinitionName', 'ObjectType', 'ObjectId']
+
 if not df.empty:
-    # Add Resource Name helper
-    if 'Resource Name' not in df.columns and 'Scope' in df.columns:
-        df['Resource Name'] = df['Scope'].apply(extract_resource_name)
+    missing = [col for col in REQUIRED_COLUMNS if col not in df.columns]
+    if missing:
+        st.error(
+            f"This data is missing required column(s): {', '.join(missing)}. "
+            f"Expected columns: {', '.join(REQUIRED_COLUMNS + ['Scope'])}. "
+            "Re-export from Azure Portal following HOW_TO_GUIDE.md, or check your CSV headers."
+        )
+        st.stop()
+
+    # Add Resource Name helper - Scope is optional (live fetch always includes
+    # it, but some CSV exports may not), so fall back to a sentinel rather
+    # than a KeyError three sections down once "Resource Name" is expected.
+    if 'Resource Name' not in df.columns:
+        if 'Scope' in df.columns:
+            df['Resource Name'] = df['Scope'].apply(extract_resource_name)
+        else:
+            df['Resource Name'] = "Unknown"
 
     # Filters
     st.sidebar.header("🔍 Filters")
-    
+
     sub_list = sorted(df['Subscription'].unique())
     sel_subs = st.sidebar.multiselect("Subscriptions", sub_list, default=sub_list)
     
@@ -189,11 +205,11 @@ if not df.empty:
     type_list = sorted(df['ObjectType'].unique().astype(str).tolist())
     sel_types = st.sidebar.multiselect("Principal Types", type_list, default=type_list)
 
-    # Apply Filters
+    # Apply Filters - consistent with Subscriptions/Principal Types above:
+    # clearing every selection shows zero rows, not "no filter applied".
     filtered_df = df[df['Subscription'].isin(sel_subs)]
     filtered_df = filtered_df[filtered_df['ObjectType'].astype(str).isin(sel_types)]
-    if sel_roles:
-        filtered_df = filtered_df[filtered_df['RoleDefinitionName'].isin(sel_roles)]
+    filtered_df = filtered_df[filtered_df['RoleDefinitionName'].isin(sel_roles)]
 
     # Metrics
     m1, m2, m3, m4 = st.columns(4)
@@ -225,9 +241,16 @@ if not df.empty:
 
     # Table
     st.subheader("📋 Detailed Audit Logs")
-    # Determine the principal column name based on data
-    p_col = 'Principal (ID)' if 'Principal (ID)' in filtered_df.columns else 'DisplayName'
-    st.dataframe(filtered_df[['Subscription', p_col, 'RoleDefinitionName', 'ObjectType', 'Resource Name']], 
+    # Prefer a human-readable name when the data has one (live fetch never
+    # does; CSV exports usually do); ObjectId is guaranteed by the
+    # REQUIRED_COLUMNS check above, so it's always a safe final fallback.
+    if 'Principal (ID)' in filtered_df.columns:
+        p_col = 'Principal (ID)'
+    elif 'DisplayName' in filtered_df.columns:
+        p_col = 'DisplayName'
+    else:
+        p_col = 'ObjectId'
+    st.dataframe(filtered_df[['Subscription', p_col, 'RoleDefinitionName', 'ObjectType', 'Resource Name']],
                  width="stretch", hide_index=True)
 
     if st.button("Clear Cache / Reset"):
