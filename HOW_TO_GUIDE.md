@@ -55,6 +55,9 @@ Once the dashboard is open:
     *   **Subscription**: Toggle between different data sources.
     *   **Role Name**: Focus on high-privilege roles like `Owner` or `Contributor`.
     *   **Principal Type**: Compare access between `Users`, `Groups`, and `Service Principals`.
+    *   Missing subscription, role, or principal-type values appear as `Unknown`.
+        Those assignments remain included by default; select `Unknown` to inspect
+        them, or deselect it to exclude them. The original uploaded data is preserved.
 3.  **Analyze**:
     *   **Role Distribution**: See which roles are most common.
     *   **Top Resource Targets**: Identify "Hotspot" resources with the most direct assignments.

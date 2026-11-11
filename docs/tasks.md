@@ -16,6 +16,9 @@ record of - this is a working list, not an audit log.
 
 ## Done
 
+- [x] Keep assignments with missing subscription, role, or principal-type
+      values visible and filterable as `Unknown`, with offline dashboard
+      regression tests (issue #5).
 - [x] Fixed a `KeyError` crash when an uploaded CSV is missing
       `Subscription`/`RoleDefinitionName`/`ObjectType`/`ObjectId` -
       now shows an actionable error and stops instead of crashing

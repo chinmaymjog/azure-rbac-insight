@@ -184,6 +184,12 @@ if not df.empty:
         )
         st.stop()
 
+    # Normalize display/filter labels together so missing values stay selectable.
+    # Copy the frame to preserve the raw data shared by both ingestion paths.
+    df = df.copy()
+    filter_columns = ['Subscription', 'RoleDefinitionName', 'ObjectType']
+    df[filter_columns] = df[filter_columns].astype('string').fillna('Unknown')
+
     # Add Resource Name helper - Scope is optional (live fetch always includes
     # it, but some CSV exports may not), so fall back to a sentinel rather
     # than a KeyError three sections down once "Resource Name" is expected.
