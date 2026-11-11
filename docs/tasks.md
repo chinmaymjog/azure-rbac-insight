@@ -16,6 +16,8 @@ record of - this is a working list, not an audit log.
 
 ## Done
 
+- [x] Added GitHub Actions CI (read-only token, no secrets): runs `pytest`
+      and a gitleaks secret scan on every pull request and push to `main`.
 - [x] Keep assignments with missing subscription, role, or principal-type
       values visible and filterable as `Unknown`, with offline dashboard
       regression tests (issue #5).
