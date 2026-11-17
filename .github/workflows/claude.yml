@@ -1,0 +1,58 @@
+name: claude
+
+# Runs Claude only when the repo owner mentions @claude. Claude proposes
+# changes as branches/PRs; a human must review and merge. Never trigger this
+# from untrusted input (no pull_request_target, no automatic runs on issues
+# opened by others).
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request_review:
+    types: [submitted]
+  issues:
+    types: [opened, assigned]
+
+permissions: {}
+
+concurrency:
+  group: claude-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  claude:
+    if: |
+      github.actor == 'chinmaymjog' && (
+        (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+        (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
+        (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # The OAuth token lives only in this environment's secrets, so no other
+    # job can read it. The environment also requires a reviewer's approval.
+    environment: agent
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: "3.15"
+          cache: pip
+      - run: pip install -r requirements.txt pytest
+      - uses: anthropics/claude-code-action@cc98b3ae241b0fcfb6a42a2690751afffecb4452 # v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: |
+            --max-turns 30
+            --allowedTools "Bash(pytest:*),Bash(python -m pytest:*),Bash(python -m py_compile:*)"

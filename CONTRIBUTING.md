@@ -40,3 +40,20 @@ Before opening a Pull Request:
 - Update `docs/project-spec.md` when scope or success criteria change.
 - Update `docs/architecture.md` when a non-trivial design decision is introduced.
 - Update `docs/tasks.md` when tracked work starts or finishes.
+
+## AI-Assisted Contributions
+
+AI tools are welcome, with these rules:
+
+- **You are accountable** for every line you submit. Read and understand the code; unreviewed AI output will be closed.
+- **Disclose** substantial AI assistance in the PR description.
+- Never paste real tenant data, credentials, or tokens into AI tools, issues, or PRs.
+- Low-effort, bulk, or off-topic AI-generated PRs and issues may be closed without review.
+
+## Maintainer Automation
+
+The `@claude` GitHub workflow is restricted to the repository owner. Comments from anyone else never trigger it. Agent-authored PRs get the same review and CI requirements as any other PR and are never auto-merged.
+
+## Security Issues
+
+See [SECURITY.md](SECURITY.md); do not file them as public issues.
