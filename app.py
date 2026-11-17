@@ -38,27 +38,24 @@ Analyzing Azure Role-Based Access Control (RBAC) across multiple subscriptions.
 def get_credentials():
     return DefaultAzureCredential()
 
-@st.cache_data
-def get_subscriptions():
-    try:
-        cred = get_credentials()
-        sub_client = SubscriptionClient(cred)
-        subs = list(sub_client.subscriptions.list())
-        return {sub.display_name: sub.subscription_id for sub in subs}
-    except Exception as e:
-        st.sidebar.error(f"Error fetching subscriptions: {e}")
-        return {}
+CACHE_TTL_SECONDS = 600
 
-@st.cache_data
+# Cached functions raise on failure: Streamlit does not cache exceptions, so a
+# failed call (e.g. before `az login`) is retried on the next run.
+@st.cache_data(ttl=CACHE_TTL_SECONDS)
+def get_subscriptions():
+    cred = get_credentials()
+    sub_client = SubscriptionClient(cred)
+    subs = list(sub_client.subscriptions.list())
+    return {sub.display_name: sub.subscription_id for sub in subs}
+
+@st.cache_data(ttl=CACHE_TTL_SECONDS)
 def get_role_definitions(subscription_id):
     """Fetch role definitions to map GUIDs to names."""
-    try:
-        cred = get_credentials()
-        auth_client = AuthorizationManagementClient(cred, subscription_id)
-        role_defs = list(auth_client.role_definitions.list(scope=f"/subscriptions/{subscription_id}"))
-        return {rd.id.split('/')[-1]: rd.role_name for rd in role_defs}
-    except Exception:
-        return {}
+    cred = get_credentials()
+    auth_client = AuthorizationManagementClient(cred, subscription_id)
+    role_defs = list(auth_client.role_definitions.list(scope=f"/subscriptions/{subscription_id}"))
+    return {rd.id.split('/')[-1]: rd.role_name for rd in role_defs}
 
 def extract_resource_name(scope):
     if not isinstance(scope, str) or not scope:
@@ -69,39 +66,43 @@ def extract_resource_name(scope):
         return parts[-1]
     return "Subscription Level"
 
-@st.cache_data
+@st.cache_data(ttl=CACHE_TTL_SECONDS)
+def fetch_subscription_rbac(name, sub_id, role_map_items):
+    """Fetch RBAC rows for one subscription. Raises on failure (never cached)."""
+    role_map = dict(role_map_items)
+    cred = get_credentials()
+    auth_client = AuthorizationManagementClient(cred, sub_id)
+    rows = []
+    for ra in auth_client.role_assignments.list_for_subscription():
+        role_def_id = ra.role_definition_id.split('/')[-1]
+        rows.append({
+            'Subscription': name,
+            'Principal (ID)': ra.principal_id, # SDK only returns ID, Name requires Graph API
+            'ObjectId': ra.principal_id,
+            'RoleDefinitionName': role_map.get(role_def_id, role_def_id),
+            'ObjectType': ra.principal_type,
+            'Scope': ra.scope,
+        })
+    return rows
+
 def fetch_all_rbac(selected_subs_dict):
-    """Fetch and aggregate RBAC assignments from multiple subscriptions."""
+    """Aggregate RBAC assignments from multiple subscriptions (UI lives here, uncached)."""
     all_data = []
-    progress_text = "Fetching Azure Data..."
-    my_bar = st.progress(0, text=progress_text)
-    
+    my_bar = st.progress(0, text="Fetching Azure Data...")
+
     total = len(selected_subs_dict)
     for i, (name, sub_id) in enumerate(selected_subs_dict.items()):
         my_bar.progress((i + 1) / total, text=f"Processing {name}...")
         try:
-            cred = get_credentials()
-            auth_client = AuthorizationManagementClient(cred, sub_id)
-            assignments = list(auth_client.role_assignments.list_for_subscription())
-            
-            # Get role mapping for this sub
-            role_map = get_role_definitions(sub_id)
-            
-            for ra in assignments:
-                role_def_id = ra.role_definition_id.split('/')[-1]
-                role_name = role_map.get(role_def_id, role_def_id)
-                
-                all_data.append({
-                    'Subscription': name,
-                    'Principal (ID)': ra.principal_id, # SDK only returns ID, Name requires Graph API
-                    'ObjectId': ra.principal_id,
-                    'RoleDefinitionName': role_name,
-                    'ObjectType': ra.principal_type,
-                    'Scope': ra.scope,
-                })
+            try:
+                role_map = get_role_definitions(sub_id)
+            except Exception as e:
+                st.warning(f"Could not load role names for {name}; showing role GUIDs: {e}")
+                role_map = {}
+            all_data.extend(fetch_subscription_rbac(name, sub_id, tuple(role_map.items())))
         except Exception as e:
             st.error(f"Failed to fetch for {name}: {e}")
-            
+
     my_bar.empty()
     return pd.DataFrame(all_data)
 
@@ -141,7 +142,11 @@ df = pd.DataFrame()
 
 if input_mode == "Azure SDK (Live)":
     st.sidebar.subheader("🔌 Azure Connection")
-    subscriptions = get_subscriptions()
+    try:
+        subscriptions = get_subscriptions()
+    except Exception as e:
+        subscriptions = {}
+        st.sidebar.error(f"Error fetching subscriptions: {e}")
     if subscriptions:
         selected_sub_names = st.sidebar.multiselect("Select Subscriptions", 
                                                    options=list(subscriptions.keys()),
@@ -260,6 +265,7 @@ if not df.empty:
                  width="stretch", hide_index=True)
 
     if st.button("Clear Cache / Reset"):
+        st.cache_data.clear()
         st.session_state.clear()
         st.rerun()
 

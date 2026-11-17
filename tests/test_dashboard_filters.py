@@ -73,3 +73,40 @@ def test_existing_complete_data_still_renders():
     assert not app.exception
     assert app.metric[0].value == "1"
     assert app.sidebar.multiselect[0].options == ["Production"]
+
+
+def test_subscription_failure_is_not_cached():
+    st_cache = pytest.importorskip("streamlit").cache_data
+    st_cache.clear()
+    calls = {"n": 0}
+
+    def fake_client(_cred):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise RuntimeError("not logged in")
+        sub = type("S", (), {"display_name": "Prod", "subscription_id": "abc"})()
+        client = type("C", (), {})()
+        client.subscriptions = type("L", (), {"list": staticmethod(lambda: [sub])})()
+        return client
+
+    with patch("azure.mgmt.subscription.SubscriptionClient", fake_client), \
+         patch("azure.identity.DefaultAzureCredential"):
+        app = AppTest.from_file(str(APP)).run(timeout=20)
+        assert not app.exception
+        assert app.sidebar.error  # first run surfaces the failure
+        app.run(timeout=20)  # after "az login": must retry, not reuse a cached {}
+        assert not app.exception
+        assert app.sidebar.multiselect[0].options == ["Prod"]
+    st_cache.clear()
+
+
+def test_reset_clears_cache_data():
+    data = pd.read_csv(io.StringIO(CSV))
+    app = AppTest.from_file(str(APP))
+    app.session_state["df"] = data
+    with patch("azure.mgmt.subscription.SubscriptionClient") as client, \
+         patch("streamlit.cache_data.clear") as clear:
+        client.return_value.subscriptions.list.return_value = []
+        app.run(timeout=20)
+        next(b for b in app.button if b.label == "Clear Cache / Reset").click().run(timeout=20)
+    clear.assert_called()
