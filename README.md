@@ -91,6 +91,19 @@ docker-compose up --build
 Expected local access:
 - `http://localhost:8501`
 
+What works in Docker:
+- **CSV upload**: always works, no configuration needed.
+- **Live Azure fetch**: works with a service principal. The image does not include Azure CLI, so your local `az login` is not available in the container. Provide credentials via the host environment or a local `.env` file (copy `.env.example`; `.env` is git-ignored):
+
+```bash
+export AZURE_CLIENT_ID=<app-id>
+export AZURE_CLIENT_SECRET=<secret>
+export AZURE_TENANT_ID=<tenant-id>
+docker-compose up --build
+```
+
+The service principal needs Reader access to the subscriptions you want to inspect. Never commit these values.
+
 ### 3. Choose Data Source Mode
 
 #### Live Azure Fetch
@@ -98,7 +111,7 @@ Expected local access:
 Use this when you want current RBAC data directly from Azure.
 
 Requirements:
-- `az login` completed locally
+- `az login` completed locally (when running without Docker), or a service principal via `AZURE_CLIENT_ID` / `AZURE_CLIENT_SECRET` / `AZURE_TENANT_ID` (Docker)
 - Reader access to the subscription(s) you want to inspect
 
 Best for:

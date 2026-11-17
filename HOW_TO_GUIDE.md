@@ -44,6 +44,10 @@ docker-compose up --build
 
 Open `http://localhost:8501` in your browser.
 
+**What works in Docker:**
+- **CSV upload** always works.
+- **Live Azure fetch** requires a service principal with Reader access, because the image has no Azure CLI and your local `az login` is not available. Set `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET` and `AZURE_TENANT_ID` in your shell or in a local `.env` file (copy `.env.example`; never commit it) before running `docker-compose up --build`.
+
 ---
 
 ## Step 3: Performing the Audit
